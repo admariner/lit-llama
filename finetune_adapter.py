@@ -83,10 +83,10 @@ def main():
         torch.set_default_tensor_type(torch.FloatTensor)
         # strict=False because missing keys due to adapter weights not containted in state dict
         model.load_state_dict(checkpoint, strict=False)
-    
+
     mark_only_adapter_as_trainable(model)
 
-    num_params = sum([p.numel() for p in model.parameters() if p.requires_grad])
+    num_params = sum(p.numel() for p in model.parameters() if p.requires_grad)
     print(f"Number of trainable parameters: {num_params}")
 
     optimizer = torch.optim.AdamW(model.parameters(), lr=learning_rate, weight_decay=weight_decay)
@@ -95,7 +95,7 @@ def main():
 
     # Save the final checkpoint at the end of training
     checkpoint = {"model": model}
-    fabric.save(os.path.join(out_dir, f"alpaca-adapter-finetuned.pt"), checkpoint)
+    fabric.save(os.path.join(out_dir, "alpaca-adapter-finetuned.pt"), checkpoint)
 
 
 def train(
@@ -193,8 +193,9 @@ def loss_fn(logits, targets):
     # shift the targets such that output n predicts token n+1
     logits = logits[..., :-1, :].contiguous()
     targets = targets[..., 1:].contiguous()
-    loss = torch.nn.functional.cross_entropy(logits.view(-1, logits.size(-1)), targets.view(-1), ignore_index=-1)
-    return loss
+    return torch.nn.functional.cross_entropy(
+        logits.view(-1, logits.size(-1)), targets.view(-1), ignore_index=-1
+    )
     
 
 def get_batch(fabric: L.Fabric, data: list):

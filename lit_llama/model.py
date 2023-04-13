@@ -50,9 +50,7 @@ class LLaMA(nn.Module):
         )
 
     def _init_weights(self, module: nn.Module) -> None:
-        if isinstance(module, nn.Linear):
-            torch.nn.init.normal_(module.weight, mean=0.0, std=0.02 / math.sqrt(2 * self.config.n_layer))
-        elif isinstance(module, nn.Embedding):
+        if isinstance(module, (nn.Linear, nn.Embedding)):
             torch.nn.init.normal_(module.weight, mean=0.0, std=0.02 / math.sqrt(2 * self.config.n_layer))
 
     def forward(self, idx: torch.Tensor) -> torch.Tensor:
@@ -68,9 +66,7 @@ class LLaMA(nn.Module):
             x = block(x)
         x = self.transformer.ln_f(x)
 
-        logits = self.lm_head(x)  # (b, t, vocab_size)
-
-        return logits
+        return self.lm_head(x)
 
     @classmethod
     def from_name(cls, name: str) -> Self:
@@ -207,17 +203,17 @@ def build_rope_cache(seq_len: int, n_elem: int, dtype: torch.dtype, device: torc
     # Compute cache. Because polar only takes float32 or float64, we need to cast
     # when working with 16 bit floats (float16 or bfloat16)
     working_dtype = (
-        torch.float32 if (dtype == torch.float16 or dtype == torch.bfloat16) else dtype
+        torch.float32 if dtype in [torch.float16, torch.bfloat16] else dtype
     )
     complex_dtype = (
         torch.complex32
-        if (dtype == torch.float16 or dtype == torch.bfloat16)
+        if dtype in [torch.float16, torch.bfloat16]
         else torch.complex64
     )
-    cache = torch.polar(
-        torch.ones_like(idx_theta).to(working_dtype), idx_theta.to(working_dtype)
+    return torch.polar(
+        torch.ones_like(idx_theta).to(working_dtype),
+        idx_theta.to(working_dtype),
     ).to(complex_dtype)
-    return cache
 
 
 def apply_rope(x: torch.Tensor, rope_cache: torch.Tensor) -> torch.Tensor:

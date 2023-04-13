@@ -74,10 +74,7 @@ class EmptyInitOnDevice(torch.overrides.TorchFunctionMode):
     def __torch_function__(self, func, types, args=(), kwargs=None):
         kwargs = kwargs or {}
         if getattr(func, "__module__", None) == "torch.nn.init":
-            if "tensor" in kwargs:
-                return kwargs["tensor"]
-            else:
-                return args[0]
+            return kwargs["tensor"] if "tensor" in kwargs else args[0]
         if (
             self.device is not None
             and func in torch.utils._device._device_constructors()
