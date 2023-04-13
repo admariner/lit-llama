@@ -137,18 +137,13 @@ class GPTQQuantizer:
     @staticmethod
     def quantize_weight(x, scale, zero, maxq):
         q = torch.clamp(torch.round(x / scale) + zero, 0, maxq)
-        x_rec = scale * (q - zero)
-        return x_rec
+        return scale * (q - zero)
 
     def find_params_weight(self, x):
         dev = x.device
 
         shape = x.shape
-        if self.perchannel:
-            x = x.flatten(1)
-        else:
-            x = x.flatten().unsqueeze(0)
-
+        x = x.flatten(1) if self.perchannel else x.flatten().unsqueeze(0)
         tmp = torch.zeros(x.shape[0], device=dev)
         xmin = torch.minimum(x.min(1)[0], tmp)
         xmax = torch.maximum(x.max(1)[0], tmp)
@@ -236,11 +231,10 @@ class GPTQQuantizer:
                 w = W1[:, i]
                 d = Hinv1[i, i]
 
-                if self.groupsize != -1:
-                    if (i1 + i) % self.groupsize == 0:
-                        scale, zero = self.find_params_weight(W[:, (i1 + i):(i1 + i + self.groupsize)])
-                        self.scales[:, (i1 + i) // self.groupsize] = scale
-                        self.zeros[:, (i1 + i) // self.groupsize] = zeros
+                if self.groupsize != -1 and (i1 + i) % self.groupsize == 0:
+                    scale, zero = self.find_params_weight(W[:, (i1 + i):(i1 + i + self.groupsize)])
+                    self.scales[:, (i1 + i) // self.groupsize] = scale
+                    self.zeros[:, (i1 + i) // self.groupsize] = zeros
 
                 q = self.quantize_weight(
                     w.unsqueeze(1), scale, zero, self.maxq

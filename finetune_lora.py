@@ -164,8 +164,9 @@ def loss_fn(logits, targets):
     # shift the targets such that output n predicts token n+1
     logits = logits[..., :-1, :].contiguous()
     targets = targets[..., 1:].contiguous()
-    loss = torch.nn.functional.cross_entropy(logits.view(-1, logits.size(-1)), targets.view(-1), ignore_index=-1)
-    return loss
+    return torch.nn.functional.cross_entropy(
+        logits.view(-1, logits.size(-1)), targets.view(-1), ignore_index=-1
+    )
     
 
 def get_batch(fabric: L.Fabric, data: list):

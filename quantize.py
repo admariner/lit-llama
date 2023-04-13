@@ -26,11 +26,10 @@ def get_sample_data():
         data_files={"train": "en/c4-train.00000-of-01024.json.gz"},
         split="train",
     )
-    # heuristic for the data size?
-    txt = "\n".join(
-        traindata[i]["text"] for i in torch.randperm(len(traindata))[:1000].tolist()
+    return "\n".join(
+        traindata[i]["text"]
+        for i in torch.randperm(len(traindata))[:1000].tolist()
     )
-    return txt
 
 
 @torch.no_grad()
@@ -48,9 +47,10 @@ def llama_blockwise_quantization(
     print(model.config)
 
     model.transformer.wte.to(working_device)
-    inps = []
-    for batch in sample_inputs:
-        inps.append(model.transformer.wte(batch[None].to(working_device)))
+    inps = [
+        model.transformer.wte(batch[None].to(working_device))
+        for batch in sample_inputs
+    ]
     inps = torch.cat(inps, dim=0)
     model.transformer.wte.to("cpu")
     torch.cuda.empty_cache()

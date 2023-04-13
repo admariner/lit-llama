@@ -21,7 +21,7 @@ def convert_hf_checkpoint(
     Perform the reverse operation of: https://github.com/huggingface/transformers/blob/main/src/transformers/models/llama/convert_llama_weights_to_hf.py
     """
 
-    print("Loading weights from pretrained LLaMA %s" % model_size)
+    print(f"Loading weights from pretrained LLaMA {model_size}")
 
     config = LLaMAConfig.from_name(model_size)
     model = LLaMA(config)

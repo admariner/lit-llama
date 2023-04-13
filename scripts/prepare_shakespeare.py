@@ -41,8 +41,7 @@ def prepare(destination_path: Path = Path("data/shakespeare")) -> None:
         with open(input_file_path, "w") as f:
             f.write(requests.get(data_url).text)
 
-    with open(input_file_path) as f:
-        data = f.read()
+    data = Path(input_file_path).read_text()
     n = len(data)
     train_data = data[: int(n * 0.9)]
     val_data = data[int(n * 0.9) :]

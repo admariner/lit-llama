@@ -19,8 +19,9 @@ python -m scripts.convert_checkpoint converted
 
 
 def convert_state_dict(state_dict: Dict[str, torch.Tensor], dtype: torch.dtype = torch.float32) -> Dict[str, torch.Tensor]:
-    converted = {}
-    converted["transformer.wte.weight"] = state_dict["tok_embeddings.weight"].to(dtype)
+    converted = {
+        "transformer.wte.weight": state_dict["tok_embeddings.weight"].to(dtype)
+    }
     converted["lm_head.weight"] = state_dict["output.weight"].to(dtype)
     converted["transformer.ln_f.scale"] = state_dict["norm.weight"].to(dtype)
 
@@ -105,11 +106,7 @@ def meta_weights_for_nano_model(
             combined = converted
             continue
         for name, param in converted.items():
-            dim = None
-            for k, d in shard_dims.items():
-                if k in name:
-                    dim = d
-                    break
+            dim = next((d for k, d in shard_dims.items() if k in name), None)
             if dim is None:
                 # Extra check: assert that tensors are the same if not sharded
                 # assert torch.allclose(combined[name], param)

@@ -51,10 +51,10 @@ def main(
     if not adapter_path:
         adapter_path = Path("out/adapter/alpaca/alpaca-adapter-finetuned.pt")
     if not pretrained_path:
-        pretrained_path = Path(f"./checkpoints/lit-llama/7B/state_dict.pth")
+        pretrained_path = Path("./checkpoints/lit-llama/7B/state_dict.pth")
     if not tokenizer_path:
         tokenizer_path = Path("./checkpoints/lit-llama/tokenizer.model")
-    
+
     assert adapter_path.is_file()
     assert pretrained_path.is_file()
     assert tokenizer_path.is_file()

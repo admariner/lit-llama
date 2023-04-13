@@ -142,9 +142,7 @@ class LLaMA(nn.Module):
         )
 
     def _init_weights(self, module: nn.Module) -> None:
-        if isinstance(module, nn.Linear):
-            torch.nn.init.normal_(module.weight, mean=0.0, std=0.02 / math.sqrt(2 * self.config.n_layer))
-        elif isinstance(module, nn.Embedding):
+        if isinstance(module, (nn.Linear, nn.Embedding)):
             torch.nn.init.normal_(module.weight, mean=0.0, std=0.02 / math.sqrt(2 * self.config.n_layer))
 
     def forward(self, idx: torch.Tensor) -> torch.Tensor:
@@ -161,9 +159,7 @@ class LLaMA(nn.Module):
 
         x = self.transformer.ln_f(x)
 
-        logits = self.lm_head(x)  # (b, t, vocab_size)
-
-        return logits
+        return self.lm_head(x)
 
 
 

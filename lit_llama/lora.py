@@ -124,28 +124,26 @@ class MergedLinear(nn.Linear, LoRALayer):
     def forward(self, x: torch.Tensor):
         def T(w):
             return w.T if self.fan_in_fan_out else w
+
         if self.merged:
             return F.linear(x, T(self.weight), bias=self.bias)
-        else:
-            result = F.linear(x, T(self.weight), bias=self.bias)
-            if self.r > 0:
-                after_A = F.linear(self.lora_dropout(x), self.lora_A)
-                after_B = F.conv1d(
-                    after_A.transpose(-2, -1), 
-                    self.lora_B.unsqueeze(-1), 
-                    groups=sum(self.enable_lora)
-                ).transpose(-2, -1)
-                result += self.zero_pad(after_B) * self.scaling
-            return result
+        result = F.linear(x, T(self.weight), bias=self.bias)
+        if self.r > 0:
+            after_A = F.linear(self.lora_dropout(x), self.lora_A)
+            after_B = F.conv1d(
+                after_A.transpose(-2, -1), 
+                self.lora_B.unsqueeze(-1), 
+                groups=sum(self.enable_lora)
+            ).transpose(-2, -1)
+            result += self.zero_pad(after_B) * self.scaling
+        return result
 
 
 def mark_only_lora_as_trainable(model: nn.Module, bias: str = 'none') -> None:
     for n, p in model.named_parameters():
         if 'lora_' not in n:
             p.requires_grad = False
-    if bias == 'none':
-        return
-    elif bias == 'all':
+    if bias == 'all':
         for n, p in model.named_parameters():
             if 'bias' in n:
                 p.requires_grad = True
@@ -155,6 +153,8 @@ def mark_only_lora_as_trainable(model: nn.Module, bias: str = 'none') -> None:
                 hasattr(m, 'bias') and \
                 m.bias is not None:
                     m.bias.requires_grad = True
+    elif bias == 'none':
+        return
     else:
         raise NotImplementedError
 
